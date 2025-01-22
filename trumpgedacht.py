@@ -18,7 +18,9 @@ def create_config():
     config['DEFAULT'] = {
         'api_base_url': 'https://mastodon.social',
         'email': '',
-        'password': ''
+        'password': '',
+        'scan_text': 'trump,gedacht',
+        'reply_text': 'told you so'
     }
     return config
 
@@ -27,6 +29,8 @@ def gui():
         config['DEFAULT']['api_base_url'] = url_entry.get()
         config['DEFAULT']['email'] = email_entry.get()
         config['DEFAULT']['password'] = password_entry.get()
+        config['DEFAULT']['scan_text'] = scan_text_entry.get()
+        config['DEFAULT']['reply_text'] = reply_text_entry.get()
         save_config(config_path, config)
         messagebox.showinfo("Info", "Configurations saved successfully.")
         root.destroy()
@@ -49,24 +53,36 @@ def gui():
     password_entry.grid(row=2, column=1, padx=10, pady=5)
     password_entry.insert(0, config['DEFAULT'].get('password', ''))
 
-    tk.Button(root, text="Save", command=save_and_close).grid(row=3, column=0, columnspan=2, pady=10)
+    tk.Label(root, text="Scan Text (comma-separated):").grid(row=3, column=0, padx=10, pady=5)
+    scan_text_entry = tk.Entry(root, width=40)
+    scan_text_entry.grid(row=3, column=1, padx=10, pady=5)
+    scan_text_entry.insert(0, config['DEFAULT'].get('scan_text', ''))
+
+    tk.Label(root, text="Reply Text:").grid(row=4, column=0, padx=10, pady=5)
+    reply_text_entry = tk.Entry(root, width=40)
+    reply_text_entry.grid(row=4, column=1, padx=10, pady=5)
+    reply_text_entry.insert(0, config['DEFAULT'].get('reply_text', ''))
+
+    tk.Button(root, text="Save", command=save_and_close).grid(row=5, column=0, columnspan=2, pady=10)
 
     root.mainloop()
 
 # Listener Class
 class TrumpGedachtListener(StreamListener):
-    def __init__(self, api):
+    def __init__(self, api, scan_text, reply_text):
         super().__init__()
         self.api = api
+        self.scan_text = scan_text
+        self.reply_text = reply_text
 
     def on_update(self, status):
         # Check for keywords in the Toot
         content = status.content.lower()
-        if "trump" in content and "gedacht" in content:
+        if all(word in content for word in self.scan_text):
             print(f"Gefundener Toot: {status.content}")
-            # Post "told you so"
+            # Post the reply text
             self.api.status_post(
-                "told you so", in_reply_to_id=status.id
+                self.reply_text, in_reply_to_id=status.id
             )
             print("Antwort gepostet.")
 
@@ -82,6 +98,9 @@ except FileNotFoundError:
 if not config['DEFAULT'].get('email') or not config['DEFAULT'].get('password'):
     gui()
 
+scan_text = config['DEFAULT']['scan_text'].split(',')
+reply_text = config['DEFAULT']['reply_text']
+
 mastodon = Mastodon(
     client_id=None,
     api_base_url=config['DEFAULT']['api_base_url']
@@ -92,6 +111,6 @@ mastodon.log_in(
     to_file='usercred.secret'
 )
 
-listener = TrumpGedachtListener(mastodon)
+listener = TrumpGedachtListener(mastodon, scan_text, reply_text)
 mastodon.stream_public(listener)
 
