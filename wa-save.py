@@ -11,11 +11,11 @@ options = webdriver.ChromeOptions()
 options.add_argument("--user-data-dir=./whatsapp_data")  # Speichert Session
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
 
-# 1️⃣ WhatsApp Web öffnen
+#  WhatsApp Web öffnen
 driver.get("https://web.whatsapp.com/")
 input("Scanne den QR-Code und drücke ENTER...")  # Warte auf manuelles Login
 
-# 2️⃣ Status-Bereich öffnen
+#  Status-Bereich öffnen
 status_xpath = "//div[@title='Status']"
 try:
     driver.find_element(By.XPATH, status_xpath).click()
@@ -24,7 +24,7 @@ except:
     print("Status-Button nicht gefunden!")
     driver.quit()
 
-# 3️⃣ Alle Statusmeldungen abrufen
+#  Alle Statusmeldungen abrufen
 status_list = driver.find_elements(By.XPATH, "//div[contains(@aria-label, ' von ')]")
 
 # Sicherstellen, dass es Statusmeldungen gibt
@@ -32,7 +32,7 @@ if not status_list:
     print("Keine Statusmeldungen gefunden.")
     driver.quit()
 
-# 4️⃣ Durch Status scrollen und Screenshots speichern
+#  Durch Status scrollen und Screenshots speichern
 output_folder = "whatsapp_status_backup"
 os.makedirs(output_folder, exist_ok=True)
 
